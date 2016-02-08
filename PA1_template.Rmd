@@ -5,21 +5,63 @@ output:
     keep_md: true
 ---
 
+install.packages("ggplot2", repos="http://cran.us.r-project.org")
+install.packages("reshape")
+
+echo = TRUE 
 
 ## Loading and preprocessing the data
+Act_Data<-read.csv("D:/Google/Data Scientist/Reproducible Research/Week 1/Assign/activity.csv", header=TRUE, colClasses=c("numeric", "Date","numeric"))
 
-
+#Removing missing rows
+Act_Datagood<-Act_Data[complete.cases(Act_Data),]
 
 ## What is mean total number of steps taken per day?
 
+#Number if steps taken per day
+Act_dData<-tapply(Act_Datagood[,1],INDEX=Act_Datagood$date,FUN=sum)
+
+#Plottng number of steps taken per day
+hist(Act_dData)
+
+#mean and median total number of steps taken per day
+Act_dData_mean<-mean(Act_dData,na.rm=T)
+Act_dData_median<-median(Act_dData,na.rm=T)
 
 
 ## What is the average daily activity pattern?
+Act_Datagood[,3]<-as.factor(Act_Datagood[,3])
+Activity_avg<-tapply(Act_Datagood[,1],INDEX=Act_Datagood$interval,FUN=sum,na.rm=T)/length(levels(Act_Datagood$interval))
 
+plot(Activity_avg, type="l")
 
+#Maximum number of steps
+Activity_avg_max<-which.max(Activity_avg)
 
 ## Imputing missing values
+for (counter in 1:dim(Act_Data)[1])
+  if (is.na(Act_Data[counter,1])==T) Act_Data[counter,1]<-Act_dData_mean
 
+#New mean and median
+Act_dData_mean2<-mean(Act_Data[,1],na.rm=T)
+Act_dData_median2<-median(Act_Data[,1],na.rm=T)
 
+#new plot
+Act_Data[,3]<-as.factor(Act_Data[,3])
+Activity_avg<-tapply(Act_Data[,1],INDEX=Act_Data$interval,FUN=sum,na.rm=T)/length(levels(Act_Data$interval))
+
+#Plottng number of steps taken per day
+Act_dData<-tapply(Act_Data[,1],INDEX=Act_Data$date,FUN=sum)
+hist(Act_dData)
 
 ## Are there differences in activity patterns between weekdays and weekends?
+DayOfWeeek1<-cbind(Act_Data,weekdays(as.Date(as.character(Act_Data[,2]),format="%Y-%m-%d")))
+names(DayOfWeeek1)[dim(DayOfWeeek1)[2]]<-"day"
+levels(DayOfWeeek1$day)[c(1,6)]<-"weekend"
+levels(DayOfWeeek1$day)[c(2:6)]<-"weekday"
+PlotData<-tapply(DayOfWeeek1[,1],INDEX=list(DayOfWeeek1$interval,DayOfWeeek1$day),FUN=sum)/length(levels(Act_Data$interval))
+library("reshape")
+PlotData<-melt(PlotData)
+g<-ggplot(PlotData, aes(x=X1,value))
+g+ geom_line(aes(color=act_i2$X2))+ facet_grid(. ~ X2)
+
